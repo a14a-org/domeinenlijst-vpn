@@ -16,10 +16,6 @@ spec:
         app: vpn-proxy
         provider: surfshark
     spec:
-      securityContext:
-        sysctls:
-          - name: net.ipv4.ip_forward
-            value: "1"
       containers:
       - name: vpn-proxy
         image: ghcr.io/a14a-org/domeinenlijst-vpn:latest
@@ -106,10 +102,6 @@ spec:
         app: vpn-proxy
         provider: nordvpn
     spec:
-      securityContext:
-        sysctls:
-          - name: net.ipv4.ip_forward
-            value: "1"
       containers:
       - name: vpn-proxy
         image: ghcr.io/a14a-org/domeinenlijst-vpn:latest
@@ -196,10 +188,6 @@ spec:
         app: vpn-proxy
         provider: namecheap
     spec:
-      securityContext:
-        sysctls:
-          - name: net.ipv4.ip_forward
-            value: "1"
       containers:
       - name: vpn-proxy
         image: ghcr.io/a14a-org/domeinenlijst-vpn:latest
