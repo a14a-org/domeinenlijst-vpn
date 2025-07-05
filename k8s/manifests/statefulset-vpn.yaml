@@ -16,6 +16,8 @@ spec:
         app: vpn-proxy
         provider: surfshark
     spec:
+      imagePullSecrets:
+      - name: ghcr-pull-secret
       containers:
       - name: vpn-proxy
         image: ghcr.io/a14a-org/domeinenlijst-vpn:latest
@@ -102,6 +104,8 @@ spec:
         app: vpn-proxy
         provider: nordvpn
     spec:
+      imagePullSecrets:
+      - name: ghcr-pull-secret
       containers:
       - name: vpn-proxy
         image: ghcr.io/a14a-org/domeinenlijst-vpn:latest
@@ -188,6 +192,8 @@ spec:
         app: vpn-proxy
         provider: namecheap
     spec:
+      imagePullSecrets:
+      - name: ghcr-pull-secret
       containers:
       - name: vpn-proxy
         image: ghcr.io/a14a-org/domeinenlijst-vpn:latest

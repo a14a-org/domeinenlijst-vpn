@@ -13,6 +13,8 @@ spec:
       labels:
         app: vpn-proxy-api
     spec:
+      imagePullSecrets:
+      - name: ghcr-pull-secret
       containers:
       - name: api
         image: ghcr.io/a14a-org/domeinenlijst-vpn-api:latest
