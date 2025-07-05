@@ -8,7 +8,8 @@ RUN apk add --no-cache \
     curl \
     bash \
     iptables \
-    jq
+    jq \
+    net-tools
 
 # Create directories
 RUN mkdir -p /etc/openvpn /var/log/supervisor /app

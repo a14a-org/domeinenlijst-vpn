@@ -26,20 +26,33 @@ case "$VPN_PROVIDER" in
             exit 1
         fi
         echo "Configuring Surfshark VPN..."
+        echo "Username: ${SURFSHARK_USERNAME}"
         ;;
     "nordvpn")
-        if [ -z "$NORDVPN_USERNAME" ] || [ -z "$NORDVPN_PASSWORD" ]; then
-            echo "Error: NORDVPN_USERNAME and NORDVPN_PASSWORD must be set"
+        # Check provider-specific first, then fall back to SURFSHARK_ for compatibility
+        if [ -z "$NORDVPN_USERNAME" ] && [ -z "$SURFSHARK_USERNAME" ]; then
+            echo "Error: Neither NORDVPN_USERNAME nor SURFSHARK_USERNAME is set"
+            exit 1
+        fi
+        if [ -z "$NORDVPN_PASSWORD" ] && [ -z "$SURFSHARK_PASSWORD" ]; then
+            echo "Error: Neither NORDVPN_PASSWORD nor SURFSHARK_PASSWORD is set"
             exit 1
         fi
         echo "Configuring NordVPN..."
+        echo "Username: ${NORDVPN_USERNAME:-$SURFSHARK_USERNAME}"
         ;;
     "namecheap")
-        if [ -z "$NAMECHEAP_USERNAME" ] || [ -z "$NAMECHEAP_PASSWORD" ]; then
-            echo "Error: NAMECHEAP_USERNAME and NAMECHEAP_PASSWORD must be set"
+        # Check provider-specific first, then fall back to SURFSHARK_ for compatibility
+        if [ -z "$NAMECHEAP_USERNAME" ] && [ -z "$SURFSHARK_USERNAME" ]; then
+            echo "Error: Neither NAMECHEAP_USERNAME nor SURFSHARK_USERNAME is set"
+            exit 1
+        fi
+        if [ -z "$NAMECHEAP_PASSWORD" ] && [ -z "$SURFSHARK_PASSWORD" ]; then
+            echo "Error: Neither NAMECHEAP_PASSWORD nor SURFSHARK_PASSWORD is set"
             exit 1
         fi
         echo "Configuring Namecheap VPN..."
+        echo "Username: ${NAMECHEAP_USERNAME:-$SURFSHARK_USERNAME}"
         ;;
     *)
         echo "Error: Unknown VPN_PROVIDER: $VPN_PROVIDER"
@@ -59,18 +72,25 @@ fi
 cp "/etc/openvpn-configs/${CONFIG_KEY}" /etc/openvpn/client.conf
 
 # Create auth file based on provider
+# Note: For compatibility, also check SURFSHARK_USERNAME/PASSWORD for all providers
 case "$VPN_PROVIDER" in
     "surfshark")
-        echo "$SURFSHARK_USERNAME" > /etc/openvpn/auth.txt
-        echo "$SURFSHARK_PASSWORD" >> /etc/openvpn/auth.txt
+        echo "${SURFSHARK_USERNAME}" > /etc/openvpn/auth.txt
+        echo "${SURFSHARK_PASSWORD}" >> /etc/openvpn/auth.txt
         ;;
     "nordvpn")
-        echo "$NORDVPN_USERNAME" > /etc/openvpn/auth.txt
-        echo "$NORDVPN_PASSWORD" >> /etc/openvpn/auth.txt
+        # Try provider-specific first, fall back to SURFSHARK_ for compatibility
+        USERNAME="${NORDVPN_USERNAME:-$SURFSHARK_USERNAME}"
+        PASSWORD="${NORDVPN_PASSWORD:-$SURFSHARK_PASSWORD}"
+        echo "$USERNAME" > /etc/openvpn/auth.txt
+        echo "$PASSWORD" >> /etc/openvpn/auth.txt
         ;;
     "namecheap")
-        echo "$NAMECHEAP_USERNAME" > /etc/openvpn/auth.txt
-        echo "$NAMECHEAP_PASSWORD" >> /etc/openvpn/auth.txt
+        # Try provider-specific first, fall back to SURFSHARK_ for compatibility
+        USERNAME="${NAMECHEAP_USERNAME:-$SURFSHARK_USERNAME}"
+        PASSWORD="${NAMECHEAP_PASSWORD:-$SURFSHARK_PASSWORD}"
+        echo "$USERNAME" > /etc/openvpn/auth.txt
+        echo "$PASSWORD" >> /etc/openvpn/auth.txt
         ;;
 esac
 
@@ -113,14 +133,38 @@ iptables -A FORWARD -i tun0 -o eth0 -m state --state RELATED,ESTABLISHED -j ACCE
 
 # Start Dante SOCKS5 server
 echo "Starting Dante SOCKS5 server..."
-# Try sockd first, fall back to danted
+# Check which dante binary is available
 if command -v sockd &> /dev/null; then
-    sockd -f /etc/dante.conf
+    echo "Found sockd binary"
+    DANTE_CMD="sockd"
 elif command -v danted &> /dev/null; then
-    danted -f /etc/dante.conf
+    echo "Found danted binary"
+    DANTE_CMD="danted"
 else
     echo "Error: Neither sockd nor danted found"
+    # List available binaries for debugging
+    echo "Available binaries in /usr/sbin:"
+    ls -la /usr/sbin/ | grep -i dante || true
+    echo "Available binaries in /usr/bin:"
+    ls -la /usr/bin/ | grep -i dante || true
     exit 1
+fi
+
+# Start Dante with debugging
+echo "Starting $DANTE_CMD with config /etc/dante.conf"
+$DANTE_CMD -f /etc/dante.conf -d 2
+
+# Give it a moment to start
+sleep 2
+
+# Check if it's running
+if pgrep -f "$DANTE_CMD" > /dev/null; then
+    echo "Dante started successfully"
+    netstat -tln | grep 1080 || echo "Warning: Port 1080 not listening yet"
+else
+    echo "Error: Dante failed to start"
+    echo "Checking logs..."
+    cat /var/log/dante.log 2>/dev/null || echo "No log file found"
 fi
 
 # Monitor services
@@ -133,13 +177,9 @@ while true; do
     fi
     
     # Check if Dante is running
-    if ! pgrep -f "dante|sockd" > /dev/null; then
+    if ! pgrep -f "$DANTE_CMD" > /dev/null; then
         echo "Dante died, restarting..."
-        if command -v sockd &> /dev/null; then
-            sockd -f /etc/dante.conf
-        else
-            danted -f /etc/dante.conf
-        fi
+        $DANTE_CMD -f /etc/dante.conf -d 2
     fi
     
     sleep 10
