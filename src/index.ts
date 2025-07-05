@@ -51,7 +51,7 @@ async function main() {
     app.use(express.json());
 
     // Add request logging
-    app.use((req, res, next) => {
+    app.use((req, _res, next) => {
       logger.info({ method: req.method, url: req.url }, 'Incoming request');
       next();
     });
@@ -60,7 +60,7 @@ async function main() {
     app.use('/api/v1', createProxyRoutes(proxyManager));
 
     // Error handling
-    app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
       logger.error({ error: err.message, stack: err.stack }, 'Unhandled error');
       res.status(500).json({ error: 'Internal server error' });
     });

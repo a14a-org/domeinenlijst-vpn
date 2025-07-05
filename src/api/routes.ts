@@ -7,7 +7,7 @@ export function createProxyRoutes(proxyManager: ProxyManager): Router {
   const router = Router();
 
   // Get next available proxy
-  router.get('/proxy', async (req: Request, res: Response) => {
+  router.get('/proxy', async (req: Request, res: Response): Promise<Response> => {
     try {
       const schema = Joi.object({
         strategy: Joi.string().valid('round-robin', 'random', 'performance', 'location').optional(),
@@ -26,7 +26,7 @@ export function createProxyRoutes(proxyManager: ProxyManager): Router {
         return res.status(503).json({ error: 'No healthy proxies available' });
       }
 
-      res.json({
+      return res.json({
         url: proxyUrl.url,
         proxy: {
           id: proxyUrl.proxy.id,
@@ -38,12 +38,12 @@ export function createProxyRoutes(proxyManager: ProxyManager): Router {
       });
     } catch (error) {
       console.error('Error getting proxy:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      return res.status(500).json({ error: 'Internal server error' });
     }
   });
 
   // Get random proxy
-  router.get('/proxy/random', async (req: Request, res: Response) => {
+  router.get('/proxy/random', async (_req: Request, res: Response): Promise<Response> => {
     try {
       const proxyUrl = await proxyManager.getNextProxy('random');
       
@@ -51,7 +51,7 @@ export function createProxyRoutes(proxyManager: ProxyManager): Router {
         return res.status(503).json({ error: 'No healthy proxies available' });
       }
 
-      res.json({
+      return res.json({
         url: proxyUrl.url,
         proxy: {
           id: proxyUrl.proxy.id,
@@ -63,12 +63,12 @@ export function createProxyRoutes(proxyManager: ProxyManager): Router {
       });
     } catch (error) {
       console.error('Error getting random proxy:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      return res.status(500).json({ error: 'Internal server error' });
     }
   });
 
   // Get proxy by country
-  router.get('/proxy/geo/:countryCode', async (req: Request, res: Response) => {
+  router.get('/proxy/geo/:countryCode', async (req: Request, res: Response): Promise<Response> => {
     try {
       const countryCode = req.params.countryCode.toUpperCase();
       
@@ -82,7 +82,7 @@ export function createProxyRoutes(proxyManager: ProxyManager): Router {
         return res.status(503).json({ error: `No healthy proxies available for country ${countryCode}` });
       }
 
-      res.json({
+      return res.json({
         url: proxyUrl.url,
         proxy: {
           id: proxyUrl.proxy.id,
@@ -94,12 +94,12 @@ export function createProxyRoutes(proxyManager: ProxyManager): Router {
       });
     } catch (error) {
       console.error('Error getting geo proxy:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      return res.status(500).json({ error: 'Internal server error' });
     }
   });
 
   // Get proxy statistics
-  router.get('/proxy/stats', async (req: Request, res: Response) => {
+  router.get('/proxy/stats', async (_req: Request, res: Response): Promise<Response> => {
     try {
       const stats = await proxyManager.getProxyStats();
       
@@ -123,19 +123,19 @@ export function createProxyRoutes(proxyManager: ProxyManager): Router {
         }
       }));
 
-      res.json({
+      return res.json({
         totalProxies: stats.length,
         healthyProxies: stats.filter(s => s.health.isHealthy).length,
         proxies: summary
       });
     } catch (error) {
       console.error('Error getting proxy stats:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      return res.status(500).json({ error: 'Internal server error' });
     }
   });
 
   // Report proxy error
-  router.post('/proxy/:proxyId/error', async (req: Request, res: Response) => {
+  router.post('/proxy/:proxyId/error', async (req: Request, res: Response): Promise<Response> => {
     try {
       const { proxyId } = req.params;
       const { error } = req.body;
@@ -145,20 +145,20 @@ export function createProxyRoutes(proxyManager: ProxyManager): Router {
       }
 
       await proxyManager.markProxyAsUnhealthy(proxyId, error);
-      res.json({ message: 'Proxy marked as unhealthy' });
+      return res.json({ message: 'Proxy marked as unhealthy' });
     } catch (error) {
       console.error('Error reporting proxy error:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      return res.status(500).json({ error: 'Internal server error' });
     }
   });
 
   // Health check endpoint
-  router.get('/health', (req: Request, res: Response) => {
-    res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+  router.get('/health', (_req: Request, res: Response): Response => {
+    return res.json({ status: 'healthy', timestamp: new Date().toISOString() });
   });
 
   // Ready check endpoint
-  router.get('/ready', async (req: Request, res: Response) => {
+  router.get('/ready', async (_req: Request, res: Response): Promise<Response> => {
     try {
       const stats = await proxyManager.getProxyStats();
       const healthyProxies = stats.filter(s => s.health.isHealthy).length;
@@ -170,13 +170,13 @@ export function createProxyRoutes(proxyManager: ProxyManager): Router {
         });
       }
 
-      res.json({ 
+      return res.json({ 
         status: 'ready', 
         healthyProxies,
         totalProxies: stats.length 
       });
     } catch (error) {
-      res.status(503).json({ 
+      return res.status(503).json({ 
         status: 'not ready', 
         error: 'Failed to check proxy status' 
       });
