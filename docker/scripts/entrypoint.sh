@@ -99,6 +99,10 @@ fi
 VPN_IP=$(ip addr show tun0 | grep 'inet ' | awk '{print $2}' | cut -d'/' -f1)
 echo "VPN IP: $VPN_IP"
 
+# Enable IP forwarding
+echo "Enabling IP forwarding..."
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
 # Configure iptables for SOCKS5 proxy
 echo "Configuring iptables..."
 iptables -t nat -A POSTROUTING -o tun0 -j MASQUERADE
