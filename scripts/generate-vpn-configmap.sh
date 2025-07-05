@@ -22,7 +22,9 @@ add_vpn_config() {
     local filepath="vpn-configs/$provider/$filename"
     
     if [ -f "$filepath" ]; then
-        echo "  $provider/$filename: |" >> "$OUTPUT_FILE"
+        # Replace slashes and hyphens with underscores for valid ConfigMap keys
+        key=$(echo "${provider}_${filename}" | sed 's/[\/\-]/_/g')
+        echo "  $key: |" >> "$OUTPUT_FILE"
         # Indent each line with 4 spaces for YAML formatting
         sed 's/^/    /' "$filepath" >> "$OUTPUT_FILE"
         echo "" >> "$OUTPUT_FILE"

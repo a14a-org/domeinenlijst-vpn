@@ -49,12 +49,14 @@ esac
 
 # Copy VPN configuration
 echo "Using VPN config: $VPN_CONFIG"
-if [ ! -f "/etc/openvpn-configs/${VPN_PROVIDER}/${VPN_CONFIG}" ]; then
-    echo "Error: VPN config file not found"
+# Convert the config filename to the ConfigMap key format
+CONFIG_KEY=$(echo "${VPN_PROVIDER}_${VPN_CONFIG}" | sed 's/[\/\-]/_/g')
+if [ ! -f "/etc/openvpn-configs/${CONFIG_KEY}" ]; then
+    echo "Error: VPN config file not found at /etc/openvpn-configs/${CONFIG_KEY}"
     exit 1
 fi
 
-cp "/etc/openvpn-configs/${VPN_PROVIDER}/${VPN_CONFIG}" /etc/openvpn/client.conf
+cp "/etc/openvpn-configs/${CONFIG_KEY}" /etc/openvpn/client.conf
 
 # Create auth file based on provider
 case "$VPN_PROVIDER" in
