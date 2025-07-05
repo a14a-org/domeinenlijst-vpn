@@ -20,7 +20,7 @@ spec:
       - name: ghcr-pull-secret
       containers:
       - name: vpn-proxy
-        image: ghcr.io/a14a-org/domeinenlijst-vpn:latest
+        image: ghcr.io/a14a-org/domeinenlijst-vpn:main
         imagePullPolicy: Always
         securityContext:
           capabilities:
@@ -108,7 +108,7 @@ spec:
       - name: ghcr-pull-secret
       containers:
       - name: vpn-proxy
-        image: ghcr.io/a14a-org/domeinenlijst-vpn:latest
+        image: ghcr.io/a14a-org/domeinenlijst-vpn:main
         imagePullPolicy: Always
         securityContext:
           capabilities:
@@ -196,7 +196,7 @@ spec:
       - name: ghcr-pull-secret
       containers:
       - name: vpn-proxy
-        image: ghcr.io/a14a-org/domeinenlijst-vpn:latest
+        image: ghcr.io/a14a-org/domeinenlijst-vpn:main
         imagePullPolicy: Always
         securityContext:
           capabilities:

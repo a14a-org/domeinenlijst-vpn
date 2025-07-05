@@ -17,7 +17,7 @@ spec:
       - name: ghcr-pull-secret
       containers:
       - name: api
-        image: ghcr.io/a14a-org/domeinenlijst-vpn-api:latest
+        image: ghcr.io/a14a-org/domeinenlijst-vpn-api:main
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
