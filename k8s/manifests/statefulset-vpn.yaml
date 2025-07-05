@@ -1,0 +1,269 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vpn-proxy-surfshark
+  namespace: vpn-proxy
+spec:
+  serviceName: vpn-proxy-surfshark
+  replicas: 7
+  selector:
+    matchLabels:
+      app: vpn-proxy
+      provider: surfshark
+  template:
+    metadata:
+      labels:
+        app: vpn-proxy
+        provider: surfshark
+    spec:
+      securityContext:
+        sysctls:
+          - name: net.ipv4.ip_forward
+            value: "1"
+      containers:
+      - name: vpn-proxy
+        image: ghcr.io/a14a-org/domeinenlijst-vpn:latest
+        imagePullPolicy: Always
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
+          privileged: true
+        env:
+        - name: VPN_PROVIDER
+          value: "surfshark"
+        - name: VPN_CONFIG
+          value: "nl-ams.prod.surfshark.com_tcp.ovpn"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: SURFSHARK_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: vpn-credentials
+              key: SURFSHARK_USERNAME
+        - name: SURFSHARK_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vpn-credentials
+              key: SURFSHARK_PASSWORD
+        ports:
+        - containerPort: 1080
+          name: socks5
+        volumeMounts:
+        - name: vpn-configs
+          mountPath: /etc/openvpn-configs
+        - name: dev-net-tun
+          mountPath: /dev/net/tun
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          exec:
+            command:
+            - /healthcheck.sh
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /healthcheck.sh
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: vpn-configs
+        configMap:
+          name: vpn-configs
+      - name: dev-net-tun
+        hostPath:
+          path: /dev/net/tun
+          type: CharDevice
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vpn-proxy-nordvpn
+  namespace: vpn-proxy
+spec:
+  serviceName: vpn-proxy-nordvpn
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vpn-proxy
+      provider: nordvpn
+  template:
+    metadata:
+      labels:
+        app: vpn-proxy
+        provider: nordvpn
+    spec:
+      securityContext:
+        sysctls:
+          - name: net.ipv4.ip_forward
+            value: "1"
+      containers:
+      - name: vpn-proxy
+        image: ghcr.io/a14a-org/domeinenlijst-vpn:latest
+        imagePullPolicy: Always
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
+          privileged: true
+        env:
+        - name: VPN_PROVIDER
+          value: "nordvpn"
+        - name: VPN_CONFIG
+          value: "nl716.nordvpn.com.tcp.ovpn"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NORDVPN_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: vpn-credentials
+              key: NORDVPN_USERNAME
+        - name: NORDVPN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vpn-credentials
+              key: NORDVPN_PASSWORD
+        ports:
+        - containerPort: 1080
+          name: socks5
+        volumeMounts:
+        - name: vpn-configs
+          mountPath: /etc/openvpn-configs
+        - name: dev-net-tun
+          mountPath: /dev/net/tun
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          exec:
+            command:
+            - /healthcheck.sh
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /healthcheck.sh
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: vpn-configs
+        configMap:
+          name: vpn-configs
+      - name: dev-net-tun
+        hostPath:
+          path: /dev/net/tun
+          type: CharDevice
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vpn-proxy-namecheap
+  namespace: vpn-proxy
+spec:
+  serviceName: vpn-proxy-namecheap
+  replicas: 3
+  selector:
+    matchLabels:
+      app: vpn-proxy
+      provider: namecheap
+  template:
+    metadata:
+      labels:
+        app: vpn-proxy
+        provider: namecheap
+    spec:
+      securityContext:
+        sysctls:
+          - name: net.ipv4.ip_forward
+            value: "1"
+      containers:
+      - name: vpn-proxy
+        image: ghcr.io/a14a-org/domeinenlijst-vpn:latest
+        imagePullPolicy: Always
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
+          privileged: true
+        env:
+        - name: VPN_PROVIDER
+          value: "namecheap"
+        - name: VPN_CONFIG
+          value: "NCVPN-NL-Amsterdam-TCP.ovpn"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMECHEAP_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: vpn-credentials
+              key: NAMECHEAP_USERNAME
+        - name: NAMECHEAP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vpn-credentials
+              key: NAMECHEAP_PASSWORD
+        ports:
+        - containerPort: 1080
+          name: socks5
+        volumeMounts:
+        - name: vpn-configs
+          mountPath: /etc/openvpn-configs
+        - name: dev-net-tun
+          mountPath: /dev/net/tun
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          exec:
+            command:
+            - /healthcheck.sh
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /healthcheck.sh
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: vpn-configs
+        configMap:
+          name: vpn-configs
+      - name: dev-net-tun
+        hostPath:
+          path: /dev/net/tun
+          type: CharDevice

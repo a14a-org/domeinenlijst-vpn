@@ -1,0 +1,113 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  VPN_IMAGE_NAME: a14a-org/domeinenlijst-vpn
+  API_IMAGE_NAME: a14a-org/domeinenlijst-vpn-api
+
+jobs:
+  build-vpn-container:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.VPN_IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push VPN Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  build-api-container:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push API Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  update-argocd-manifest:
+    needs: [build-vpn-container, build-api-container]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout domeinenlijst-infra repository
+        uses: actions/checkout@v4
+        with:
+          repository: a14a-org/domeinenlijst-infra
+          token: ${{ secrets.INFRA_REPO_TOKEN }}
+          ref: main
+
+      - name: Update image tags
+        run: |
+          # Update the image tags in the ArgoCD application manifest
+          sed -i "s|image: ghcr.io/${{ env.VPN_IMAGE_NAME }}:.*|image: ghcr.io/${{ env.VPN_IMAGE_NAME }}:${{ github.sha }}|g" argocd/apps/vpn-proxy.yaml
+          sed -i "s|image: ghcr.io/${{ env.API_IMAGE_NAME }}:.*|image: ghcr.io/${{ env.API_IMAGE_NAME }}:${{ github.sha }}|g" argocd/apps/vpn-proxy.yaml
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add argocd/apps/vpn-proxy.yaml
+          git commit -m "Update VPN proxy image tags to ${{ github.sha }}"
+          git push

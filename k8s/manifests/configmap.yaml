@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vpn-proxy-config
+  namespace: vpn-proxy
+data:
+  # API service configuration
+  API_PORT: "3000"
+  LOG_LEVEL: "info"
+  
+  # Database configuration
+  DB_HOST: "postgres-service.vpn-proxy.svc.cluster.local"
+  DB_PORT: "5432"
+  DB_NAME: "vpnproxy"
+  DB_USER: "vpnproxy"
+  
+  # VPN providers configuration
+  VPN_PROVIDERS: "surfshark,nordvpn,namecheap"
+  
+  # Proxy health check settings
+  HEALTH_CHECK_INTERVAL: "60000"
+  HEALTH_CHECK_TIMEOUT: "10000"
+  
+  # Default rotation strategy
+  DEFAULT_ROTATION_STRATEGY: "round-robin"

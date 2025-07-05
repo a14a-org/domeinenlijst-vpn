@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vpn-configs
+  namespace: vpn-proxy
+data:
+  # Note: In production, these would be actual .ovpn file contents
+  # For now, these are placeholders that need to be replaced with actual VPN configs
+  
+  # Surfshark configurations
+  surfshark/nl-ams.prod.surfshark.com_tcp.ovpn: |
+    # Surfshark Netherlands Amsterdam config
+    # Replace with actual .ovpn content
+    
+  surfshark/de-fra.prod.surfshark.com_tcp.ovpn: |
+    # Surfshark Germany Frankfurt config
+    # Replace with actual .ovpn content
+    
+  surfshark/be-bru.prod.surfshark.com_tcp.ovpn: |
+    # Surfshark Belgium Brussels config
+    # Replace with actual .ovpn content
+    
+  surfshark/uk-lon.prod.surfshark.com_tcp.ovpn: |
+    # Surfshark UK London config
+    # Replace with actual .ovpn content
+    
+  surfshark/fr-par.prod.surfshark.com_tcp.ovpn: |
+    # Surfshark France Paris config
+    # Replace with actual .ovpn content
+    
+  # NordVPN configurations
+  nordvpn/nl542.nordvpn.com.tcp.ovpn: |
+    # NordVPN Netherlands config
+    # Replace with actual .ovpn content
+    
+  nordvpn/nl543.nordvpn.com.tcp.ovpn: |
+    # NordVPN Netherlands config 2
+    # Replace with actual .ovpn content
+    
+  # Namecheap configurations
+  namecheap/NL-Amsterdam-NCVPN.ovpn: |
+    # Namecheap Netherlands config
+    # Replace with actual .ovpn content
+    
+  namecheap/DE-Frankfurt-NCVPN.ovpn: |
+    # Namecheap Germany config
+    # Replace with actual .ovpn content
+    
+  namecheap/UK-London-NCVPN.ovpn: |
+    # Namecheap UK config
+    # Replace with actual .ovpn content
