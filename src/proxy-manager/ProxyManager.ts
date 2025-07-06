@@ -31,16 +31,37 @@ export class ProxyManager {
   }
 
   private async loadProxies(): Promise<void> {
-    const result = await this.db.query<ProxyConfig>(
-      'SELECT * FROM proxy_configs WHERE is_active = true ORDER BY id'
+    const result = await this.db.query(
+      `SELECT 
+        id,
+        name,
+        provider,
+        host,
+        port,
+        location,
+        country_code as "countryCode",
+        is_active as "isActive",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM proxy_configs 
+      WHERE is_active = true 
+      ORDER BY id`
     );
     this.proxies = result.rows;
     this.logger.info(`Loaded ${this.proxies.length} active proxies`);
   }
 
   private async loadHealthData(): Promise<void> {
-    const result = await this.db.query<ProxyHealth>(
-      'SELECT * FROM proxy_health'
+    const result = await this.db.query(
+      `SELECT 
+        proxy_id as "proxyId",
+        is_healthy as "isHealthy",
+        last_check_time as "lastCheckTime",
+        success_count as "successCount",
+        failure_count as "failureCount",
+        avg_response_time as "avgResponseTime",
+        last_error as "lastError"
+      FROM proxy_health`
     );
     result.rows.forEach(health => {
       this.healthMap.set(health.proxyId, health);
@@ -48,8 +69,14 @@ export class ProxyManager {
   }
 
   private async loadUsageData(): Promise<void> {
-    const result = await this.db.query<ProxyUsage>(
-      'SELECT * FROM proxy_usage'
+    const result = await this.db.query(
+      `SELECT 
+        proxy_id as "proxyId",
+        usage_count as "usageCount",
+        last_used_at as "lastUsedAt",
+        total_bytes as "totalBytes",
+        errors
+      FROM proxy_usage`
     );
     result.rows.forEach(usage => {
       this.usageMap.set(usage.proxyId, usage);
