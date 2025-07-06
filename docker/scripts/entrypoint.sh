@@ -97,6 +97,9 @@ esac
 # Update OpenVPN config to use auth file
 echo "auth-user-pass /etc/openvpn/auth.txt" >> /etc/openvpn/client.conf
 
+# Prevent OpenVPN from modifying resolv.conf
+echo "pull-filter ignore \"dhcp-option DNS\"" >> /etc/openvpn/client.conf
+
 # Start OpenVPN daemon
 echo "Starting OpenVPN..."
 openvpn --config /etc/openvpn/client.conf --daemon

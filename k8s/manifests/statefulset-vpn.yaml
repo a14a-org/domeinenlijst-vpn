@@ -16,6 +16,19 @@ spec:
         app: vpn-proxy
         provider: surfshark
     spec:
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+          - 162.252.172.57  # Surfshark DNS
+          - 149.154.159.92  # Surfshark DNS
+          - 10.96.0.10      # Cluster DNS fallback
+        searches:
+          - vpn-proxy.svc.cluster.local
+          - svc.cluster.local
+          - cluster.local
+        options:
+          - name: ndots
+            value: "5"
       imagePullSecrets:
       - name: ghcr-pull-secret
       containers:
@@ -104,6 +117,19 @@ spec:
         app: vpn-proxy
         provider: nordvpn
     spec:
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+          - 103.86.96.100   # NordVPN DNS
+          - 103.86.99.100   # NordVPN DNS
+          - 10.96.0.10      # Cluster DNS fallback
+        searches:
+          - vpn-proxy.svc.cluster.local
+          - svc.cluster.local
+          - cluster.local
+        options:
+          - name: ndots
+            value: "5"
       imagePullSecrets:
       - name: ghcr-pull-secret
       containers:
@@ -192,6 +218,19 @@ spec:
         app: vpn-proxy
         provider: namecheap
     spec:
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+          - 8.8.8.8         # Google DNS (as per docker-compose)
+          - 8.8.4.4         # Google DNS
+          - 10.96.0.10      # Cluster DNS fallback
+        searches:
+          - vpn-proxy.svc.cluster.local
+          - svc.cluster.local
+          - cluster.local
+        options:
+          - name: ndots
+            value: "5"
       imagePullSecrets:
       - name: ghcr-pull-secret
       containers:
