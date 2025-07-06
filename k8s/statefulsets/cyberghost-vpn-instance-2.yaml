@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vpn-proxy-cyberghost-2
+  namespace: vpn-proxy
+spec:
+  serviceName: vpn-proxy-cyberghost-2
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vpn-proxy
+      provider: cyberghost
+      instance: "2"
+  template:
+    metadata:
+      labels:
+        app: vpn-proxy
+        provider: cyberghost
+        instance: "2"
+    spec:
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+          - 8.8.8.8         # Google DNS
+          - 8.8.4.4         # Google DNS
+          - 10.96.0.10      # Cluster DNS fallback
+        searches:
+          - vpn-proxy.svc.cluster.local
+          - svc.cluster.local
+          - cluster.local
+        options:
+          - name: ndots
+            value: "5"
+      imagePullSecrets:
+      - name: ghcr-pull-secret
+      containers:
+      - name: vpn-proxy
+        image: ghcr.io/a14a-org/domeinenlijst-vpn:main
+        imagePullPolicy: Always
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
+          privileged: true
+        env:
+        - name: VPN_PROVIDER
+          value: "surfshark"
+        - name: VPN_CONFIG
+          value: "cyberghost_openvpn.ovpn"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: SURFSHARK_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: vpn-credentials
+              key: CYBERGHOST_USERNAME_2
+        - name: SURFSHARK_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: vpn-credentials
+              key: CYBERGHOST_PASSWORD_2
+        ports:
+        - containerPort: 1080
+          name: socks5
+        volumeMounts:
+        - name: cyberghost-configs
+          mountPath: /etc/openvpn-configs
+        - name: dev-net-tun
+          mountPath: /dev/net/tun
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          exec:
+            command:
+            - /healthcheck.sh
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /healthcheck.sh
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: cyberghost-configs
+        configMap:
+          name: cyberghost-vpn-configs-instance-2
+      - name: dev-net-tun
+        hostPath:
+          path: /dev/net/tun
+          type: CharDevice

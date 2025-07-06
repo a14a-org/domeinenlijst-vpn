@@ -1,0 +1,76 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: vpn-proxy-egress
+  namespace: vpn-proxy
+  labels:
+    argocd.argoproj.io/instance: vpn-proxy
+spec:
+  podSelector:
+    matchLabels:
+      app: vpn-proxy
+  policyTypes:
+  - Egress
+  egress:
+  # Allow DNS queries
+  - to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+  
+  # Allow access to Kubernetes API
+  - to:
+    - namespaceSelector: {}
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+  
+  # Allow all traffic to WLVPN IP ranges for Namecheap
+  - to:
+    # Amsterdam servers
+    - ipBlock:
+        cidr: 176.67.80.0/24
+    # Frankfurt servers  
+    - ipBlock:
+        cidr: 216.131.111.0/24
+    # London servers
+    - ipBlock:
+        cidr: 176.56.39.0/24
+    # Additional WLVPN ranges
+    - ipBlock:
+        cidr: 216.131.112.0/24
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: UDP
+      port: 1194
+  
+  # Allow all traffic to Surfshark servers
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: UDP
+      port: 1194
+  
+  # Allow general internet access for VPN traffic
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16

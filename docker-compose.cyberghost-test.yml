@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  vpn-proxy-cyberghost-test:
+    build: ./docker
+    container_name: cyberghost-proxy-test
+    cap_add:
+      - NET_ADMIN
+    privileged: true
+    devices:
+      - /dev/net/tun
+    environment:
+      - VPN_PROVIDER=cyberghost
+      - VPN_CONFIG=openvpn.ovpn
+      - CYBERGHOST_USERNAME=yq9dctXJbW
+      - CYBERGHOST_PASSWORD=qvx2XPUVaD
+    volumes:
+      - ./vpn-configs:/etc/openvpn-configs:ro
+    ports:
+      - "1092:1080"  # SOCKS5 proxy port
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    networks:
+      - vpn-test-net
+    restart: unless-stopped
+
+networks:
+  vpn-test-net:
+    driver: bridge

@@ -54,6 +54,19 @@ case "$VPN_PROVIDER" in
         echo "Configuring Namecheap VPN..."
         echo "Username: ${NAMECHEAP_USERNAME:-$SURFSHARK_USERNAME}"
         ;;
+    "cyberghost")
+        # Check provider-specific first, then fall back to SURFSHARK_ for compatibility
+        if [ -z "$CYBERGHOST_USERNAME" ] && [ -z "$SURFSHARK_USERNAME" ]; then
+            echo "Error: Neither CYBERGHOST_USERNAME nor SURFSHARK_USERNAME is set"
+            exit 1
+        fi
+        if [ -z "$CYBERGHOST_PASSWORD" ] && [ -z "$SURFSHARK_PASSWORD" ]; then
+            echo "Error: Neither CYBERGHOST_PASSWORD nor SURFSHARK_PASSWORD is set"
+            exit 1
+        fi
+        echo "Configuring CyberGhost VPN..."
+        echo "Username: ${CYBERGHOST_USERNAME:-$SURFSHARK_USERNAME}"
+        ;;
     *)
         echo "Error: Unknown VPN_PROVIDER: $VPN_PROVIDER"
         exit 1
@@ -92,10 +105,37 @@ case "$VPN_PROVIDER" in
         echo "$USERNAME" > /etc/openvpn/auth.txt
         echo "$PASSWORD" >> /etc/openvpn/auth.txt
         ;;
+    "cyberghost")
+        # Try provider-specific first, fall back to SURFSHARK_ for compatibility
+        USERNAME="${CYBERGHOST_USERNAME:-$SURFSHARK_USERNAME}"
+        PASSWORD="${CYBERGHOST_PASSWORD:-$SURFSHARK_PASSWORD}"
+        echo "$USERNAME" > /etc/openvpn/auth.txt
+        echo "$PASSWORD" >> /etc/openvpn/auth.txt
+        ;;
 esac
 
 # Update OpenVPN config to use auth file
 echo "auth-user-pass /etc/openvpn/auth.txt" >> /etc/openvpn/client.conf
+
+# For CyberGhost, we need to embed the certificate files
+if [ "$VPN_PROVIDER" = "cyberghost" ]; then
+    # Replace file references with embedded certificates
+    CONFIG_DIR="/etc/openvpn-configs/cyberghost"
+    if [ -f "$CONFIG_DIR/ca.crt" ] && [ -f "$CONFIG_DIR/client.crt" ] && [ -f "$CONFIG_DIR/client.key" ]; then
+        # Create a temporary config file
+        cp /etc/openvpn/client.conf /etc/openvpn/client.conf.tmp
+        
+        # Process the config file to embed certificates
+        awk -v ca_file="$CONFIG_DIR/ca.crt" -v cert_file="$CONFIG_DIR/client.crt" -v key_file="$CONFIG_DIR/client.key" '
+        /^ca / { print "<ca>"; system("cat " ca_file); print "</ca>"; next }
+        /^cert / { print "<cert>"; system("cat " cert_file); print "</cert>"; next }
+        /^key / { print "<key>"; system("cat " key_file); print "</key>"; next }
+        { print }
+        ' /etc/openvpn/client.conf.tmp > /etc/openvpn/client.conf
+        
+        rm -f /etc/openvpn/client.conf.tmp
+    fi
+fi
 
 # Prevent OpenVPN from modifying resolv.conf
 echo "pull-filter ignore \"dhcp-option DNS\"" >> /etc/openvpn/client.conf
