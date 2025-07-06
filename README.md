@@ -1,5 +1,7 @@
 # Domeinenlijst VPN Proxy Service
 
+![Build Status](https://github.com/a14a-org/domeinenlijst-vpn/actions/workflows/build-and-push.yml/badge.svg)
+
 A Kubernetes-native VPN proxy service that provides SOCKS5 proxies through multiple VPN providers (Surfshark, NordVPN, Namecheap) for web scraping infrastructure.
 
 ## Architecture
